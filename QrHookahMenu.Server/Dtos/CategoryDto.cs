@@ -2,7 +2,7 @@
 {
     public class CategoryDto
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
         public int? ParentId { get; set; } // NULL ise ana kategoridir
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QrHookahMenu.Server.Contexts;
+using QrHookahMenu.Server.Dtos;
 using QrHookahMenu.Server.Models;
 
 namespace QrHookahMenu.Server.Controllers
@@ -27,7 +28,7 @@ namespace QrHookahMenu.Server.Controllers
 
         // Yeni ürün ekleme (resim dosyası destekli)
         [HttpPost]
-        public async Task<IActionResult> CreateProduct([FromForm] Product product, IFormFile? file)
+        public async Task<IActionResult> CreateProduct([FromForm] ProductDto product, IFormFile? file)
         {
             if (file != null && file.Length > 0)
             {
@@ -42,21 +43,29 @@ namespace QrHookahMenu.Server.Controllers
 
                 product.ImageUrl = $"/uploads/{fileName}"; // Resim yolu kaydediliyor
             }
-
+            var newProduct = new Product()
+            {
+                CategoryId = product.CategoryId,
+                Description = product.Description,
+                ImageUrl = product.ImageUrl,
+                Name = product.Name,
+                Price = product.Price,
+                IsAvailable = product.IsAvailable,
+            };
             var category = await _context.Categories.FindAsync(product.CategoryId);
             if (category == null)
             {
                 return NotFound("Category not found.");
             }
 
-            _context.Products.Add(product);
+            _context.Products.Add(newProduct);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetAllProducts), new { id = product.Id }, product);
         }
 
         // Ürün güncelleme
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromForm] Product updatedProduct, IFormFile? file)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductDto updatedProduct, IFormFile? file)
         {
             var product = await _context.Products.FindAsync(id);
             if (product == null)
