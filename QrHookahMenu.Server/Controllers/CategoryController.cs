@@ -21,7 +21,7 @@ namespace QrHookahMenu.Server.Controllers
         }
 
         // Tüm kategorileri listeleme
-        [HttpGet]
+        [HttpGet("all-categories")]
         public async Task<IActionResult> GetAllCategories()
         {
             var categories = await _context.Categories
@@ -36,9 +36,38 @@ namespace QrHookahMenu.Server.Controllers
 
             return Ok(categoryDtos);
         }
+        [HttpGet("get-by-id-categories")]
+        public async Task<IActionResult> GetByIdCategories(int categoryId)
+        {
+            var categories = await _context.Categories
+          .Include(c => c.SubCategories)
+          .Include(c => c.Products)
+          .Where(c => c.ParentId == categoryId)
+          .ToListAsync();
+            var categoryDtos = categories
+               .Select(c => MapToCategoryDto(c))
+               .ToList();
 
-        // Yeni kategori oluşturma (resim dosyası destekli)
-        [HttpPost]
+            return Ok(categoryDtos);
+        }
+        [HttpGet("get-by-category-id-products")]
+        public async Task<IActionResult> GetByIdCategoryIdProducts(int categoryId)
+        {
+            var products = await _context.Products.Where(x => x.CategoryId == categoryId)
+                .Select(x => new ProductDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Description = x.Description,
+                Price = x.Price,
+                ImageUrl = x.ImageUrl,
+                IsAvailable = x.IsAvailable,
+                CategoryId = x.CategoryId
+            }).ToListAsync();
+            return Ok(products);
+        }
+            // Yeni kategori oluşturma (resim dosyası destekli)
+            [HttpPost]
         public async Task<IActionResult> CreateCategory([FromForm] CategoryDto category, IFormFile? file)
         {
             if (file != null && file.Length > 0)
@@ -80,7 +109,7 @@ namespace QrHookahMenu.Server.Controllers
                 }
 
                 await _context.SaveChangesAsync(); // Güncellemeleri kaydet
-            }          
+            }
             return CreatedAtAction(nameof(GetAllCategories), new { id = newCategory.Id }, category);
         }
 
@@ -153,6 +182,20 @@ namespace QrHookahMenu.Server.Controllers
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
             return NoContent();
+        }
+        [HttpGet("base-categories")]
+        public async Task<IActionResult> GetBaseCategory()
+        {
+            var baseCategories = await _context.Categories
+         .Where(x => x.ParentId == null) // Ana kategoriler
+         .Select(x => new
+         {
+             x.Id,
+             x.Name
+         })
+         .ToListAsync();
+
+            return Ok(baseCategories); // JSON olarak döner
         }
         // Category -> CategoryDto dönüşüm metodu
         private CategoryDto MapToCategoryDto(Category category)

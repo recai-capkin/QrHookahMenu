@@ -1,4 +1,6 @@
-﻿namespace QrHookahMenu.Server.Dtos
+﻿using System.Text.Json.Serialization;
+
+namespace QrHookahMenu.Server.Dtos
 {
     public class CategoryDto
     {
@@ -8,6 +10,7 @@
         public string? Description { get; set; }
         public int? SortOrder { get; set; }
         public string? ImageUrl { get; set; }
+        [JsonIgnore]
         public List<CategoryDto>? SubCategories { get; set; } = new List<CategoryDto>();
         public List<ProductDto> Products { get; set; } = new List<ProductDto>();
     }
