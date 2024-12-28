@@ -1,15 +1,18 @@
 ﻿import React, { useState } from 'react';
 import { Input, Button, Form, Typography, message } from 'antd';
+import { useNavigate } from 'react-router-dom'; // React Router'dan useNavigate'i import edin
+import config from '../config/config';
 
 const { Title } = Typography;
 
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const navigate = useNavigate(); // useNavigate hook'u ile yönlendirme
 
     const handleLogin = async () => {
         try {
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch(`${config.apiBaseUrl}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
@@ -17,13 +20,14 @@ const Login = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem('authToken', data.token);
-                window.location.href = '/admin';
+                localStorage.setItem('authToken', data.token); // Token'ı localStorage'a kaydet
+                message.success('Başarıyla giriş yaptınız!');
+                navigate('/admin/dashboard'); // Dashboard sayfasına yönlendir
             } else {
                 message.error('Giriş başarısız! Kullanıcı adı veya şifre hatalı!');
             }
         } catch (error) {
-            message.error('Bir hata oluştu, lütfen tekrar deneyin!');
+            message.error('Bir hata oluştu, lütfen tekrar deneyin! ' + error);
         }
     };
 

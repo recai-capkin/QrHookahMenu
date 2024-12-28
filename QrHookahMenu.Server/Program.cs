@@ -1,13 +1,29 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using QrHookahMenu.Server.Contexts;
 using System;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true, // Token süresini kontrol et
+            ValidateIssuerSigningKey = true, // Gizli anahtarı doğrula
+            ValidIssuer = "QrHookahMenu", // Token oluştururken verdiğiniz issuer
+            ValidAudience = "QrHookahMenuClient", // Token oluştururken verdiğiniz audience
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSuperSecretKeyForJWTGeneration"))
+        };
+    });
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -53,5 +69,6 @@ app.MapFallbackToFile("/index.html");
 
 // CORS middleware'ini ekleyin
 app.UseCors("AllowAll");
-
+app.UseAuthentication(); // Authentication middleware'i ekle
+app.UseAuthorization();  // Authorization middleware'i ekle
 app.Run();

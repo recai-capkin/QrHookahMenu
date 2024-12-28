@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QrHookahMenu.Server.Contexts;
@@ -66,8 +67,9 @@ namespace QrHookahMenu.Server.Controllers
             }).ToListAsync();
             return Ok(products);
         }
-            // Yeni kategori oluşturma (resim dosyası destekli)
-            [HttpPost]
+        // Yeni kategori oluşturma (resim dosyası destekli)
+        [Authorize]
+        [HttpPost]
         public async Task<IActionResult> CreateCategory([FromForm] CategoryDto category, IFormFile? file)
         {
             if (file != null && file.Length > 0)

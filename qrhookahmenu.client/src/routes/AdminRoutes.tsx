@@ -8,6 +8,7 @@ import CategoriesList from '../pages/Admin/Categories/CategoriesList';
 import AddProduct from '../pages/Admin/Products/AddProduct';
 import EditProduct from '../pages/Admin/Products/EditProduct';
 import ProductsList from '../pages/Admin/Products/ProductsList';
+import NotFound from '../pages/NotFound';
 
 const AdminRoutes = () => {
     // Oturum kontrolü için localStorage'dan token alınıyor
@@ -17,7 +18,7 @@ const AdminRoutes = () => {
         <Routes>
             {/* ProtectedRoute ile sarılarak erişim kontrolü sağlanır */}
             <Route
-                path="/admin"
+                path="/admin/dashboard"
                 element={
                     <ProtectedRoute isAuthenticated={isAuthenticated}>
                         <Dashboard />
@@ -72,6 +73,7 @@ const AdminRoutes = () => {
                     </ProtectedRoute>
                 }
             />
+            <Route path="*" element={<NotFound />} />
         </Routes>
     );
 };
