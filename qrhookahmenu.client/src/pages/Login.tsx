@@ -1,44 +1,84 @@
 ﻿import React, { useState } from 'react';
+import { Input, Button, Form, Typography, message } from 'antd';
+
+const { Title } = Typography;
 
 const Login = () => {
-    const [username, setUsername] = useState(''); // Kullanıcı adı
-    const [password, setPassword] = useState(''); // Şifre
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
 
     const handleLogin = async () => {
-        // Örnek API çağrısı
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }), // Kullanıcı adı ve şifre gönderiliyor
-        });
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            });
 
-        if (response.ok) {
-            const data = await response.json();
-            // Token'ı localStorage'a kaydet
-            localStorage.setItem('authToken', data.token);
-            // Admin paneline yönlendir
-            window.location.href = '/admin';
-        } else {
-            alert('Giriş başarısız! Kullanıcı adı veya şifre hatalı!');
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('authToken', data.token);
+                window.location.href = '/admin';
+            } else {
+                message.error('Giriş başarısız! Kullanıcı adı veya şifre hatalı!');
+            }
+        } catch (error) {
+            message.error('Bir hata oluştu, lütfen tekrar deneyin!');
         }
     };
 
     return (
-        <div>
-            <h1>Giriş Yap</h1>
-            <input
-                type="text"
-                placeholder="Kullanıcı Adı" // Kullanıcı adı inputu
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-            />
-            <input
-                type="password"
-                placeholder="Şifre"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <button onClick={handleLogin}>Giriş Yap</button>
+        <div
+            style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                backgroundColor: '#f5f5f5',
+            }}
+        >
+            <div
+                style={{
+                    width: 300,
+                    padding: '24px',
+                    backgroundColor: '#fff',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                }}
+            >
+                <Title level={3} style={{ textAlign: 'center', marginBottom: '24px' }}>
+                    Giriş Yap
+                </Title>
+                <Form layout="vertical" onFinish={handleLogin}>
+                    <Form.Item
+                        label="Kullanıcı Adı"
+                        name="username"
+                        rules={[{ required: true, message: 'Lütfen kullanıcı adınızı giriniz!' }]}
+                    >
+                        <Input
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Kullanıcı Adı"
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        label="Şifre"
+                        name="password"
+                        rules={[{ required: true, message: 'Lütfen şifrenizi giriniz!' }]}
+                    >
+                        <Input.Password
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Şifre"
+                        />
+                    </Form.Item>
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit" block>
+                            Giriş Yap
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </div>
         </div>
     );
 };

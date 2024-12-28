@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Card, List, Image, Row, Col, Button, Spin, message } from 'antd';
+import { Card, List, Image, Row, Col, Button, Spin, message, Space } from 'antd';
 import config from '../../config/config';
-
+import { LeftOutlined, InstagramOutlined, EnvironmentOutlined, CopyOutlined, WifiOutlined } from '@ant-design/icons';
 interface Product {
     id: number;
     name: string;
@@ -73,7 +73,6 @@ const MenuPage: React.FC = () => {
 
             // 2) Eğer alt kategori geliyorsa data.length > 0 => alt kategoriler
             if (data.length > 0) {
-                // Stack'e ekliyoruz
                 setCategoryStack((prevStack) => [
                     ...prevStack,
                     {
@@ -92,7 +91,6 @@ const MenuPage: React.FC = () => {
                 );
                 const productsData: Product[] = await productsResponse.json();
 
-                // Stack'e ekliyoruz
                 setCategoryStack((prevStack) => [
                     ...prevStack,
                     {
@@ -159,18 +157,23 @@ const MenuPage: React.FC = () => {
                         >
                             <Card
                                 hoverable
-                                style={{ width: 300 }}
+                                style={{
+                                    width: 300,
+                                    borderRadius: 8,
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                }}
                                 onClick={() => fetchCategoryById(category.id)}
                                 cover={
                                     <Image
                                         height={200}
-                                        style={{ objectFit: 'cover' }}
+                                        style={{ objectFit: 'cover', borderTopLeftRadius: 8, borderTopRightRadius: 8 }}
                                         src={`${config.imageBaseUrl}/${category.imageUrl}`}
+                                        preview={false} // Preview'u kapattık
                                     />
                                 }
                             >
                                 <Card.Meta
-                                    title={category.name}
+                                    title={<span style={{ fontWeight: 600 }}>{category.name}</span>}
                                     description={category.description}
                                 />
                             </Card>
@@ -183,11 +186,40 @@ const MenuPage: React.FC = () => {
         // Stack boş değilse => Geri butonu + alt kategori veya ürün listesi
         return (
             <>
-                <Button type="link" onClick={handleBack} style={{ marginBottom: '20px' }}>
-                    Geri
-                </Button>
+                
+               
+                <div
+                    style={{
+                        marginBottom: '20px',
+                        display: 'flex', // Flexbox kullanıyoruz
+                        justifyContent: 'flex-end', // Sağ tarafa hizalama
+                    }}
+                >
+                    <Button
+                        icon={<LeftOutlined />}
+                        onClick={handleBack}
+                        variant="solid"
+                        style={{
+                            border: 'none',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', // Hafif gölge
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: 'linear-gradient(135deg, #d3d3d3, #a9a9a9)', // Gradient gri arka plan
+                            color: '#000', // Yazı rengi
+                        }}
+                        className="custom-button"
+                    >
+                        Geri
+                    </Button>
+                </div>
+
+
                 {subLoading ? (
-                    <Spin size="large" />
+                    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                        <Spin size="large" />
+                    </div>
                 ) : subCategories.length > 0 ? (
                     <Row gutter={[16, 16]} justify="center">
                         {subCategories.map((subCategory) => (
@@ -201,18 +233,27 @@ const MenuPage: React.FC = () => {
                             >
                                 <Card
                                     hoverable
-                                    style={{ width: 300 }}
+                                    style={{
+                                        width: 300,
+                                        borderRadius: 8,
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                    }}
                                     onClick={() => fetchCategoryById(subCategory.id)}
                                     cover={
                                         <Image
                                             height={200}
-                                            style={{ objectFit: 'cover' }}
+                                            style={{
+                                                objectFit: 'cover',
+                                                borderTopLeftRadius: 8,
+                                                borderTopRightRadius: 8,
+                                            }}
                                             src={`${config.imageBaseUrl}/${subCategory.imageUrl}`}
+                                            preview={false} // Preview'u kapattık
                                         />
                                     }
                                 >
                                     <Card.Meta
-                                        title={subCategory.name}
+                                        title={<span style={{ fontWeight: 600 }}>{subCategory.name}</span>}
                                         description={subCategory.description}
                                     />
                                 </Card>
@@ -220,23 +261,51 @@ const MenuPage: React.FC = () => {
                         ))}
                     </Row>
                 ) : (
+                    // Ürünleri "grid" formatında listeliyoruz
                     <List
-                        itemLayout="horizontal"
+                        grid={{
+                            gutter: 16,
+                            xs: 1,
+                            sm: 2,
+                            md: 3,
+                            lg: 4,
+                            xl: 4,
+                        }}
                         dataSource={products}
                         renderItem={(product) => (
-                            <List.Item>
-                                <List.Item.Meta
-                                    avatar={
+                            <List.Item key={product.id}>
+                                <Card
+                                    hoverable
+                                    style={{
+                                        borderRadius: 8,
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                    }}
+                                    cover={
                                         <Image
-                                            width={64}
-                                            height={64}
-                                            style={{ objectFit: 'cover' }}
+                                            height={200}
+                                            style={{
+                                                objectFit: 'cover',
+                                                borderTopLeftRadius: 8,
+                                                borderTopRightRadius: 8,
+                                            }}
                                             src={`${config.imageBaseUrl}/${product.imageUrl}`}
+                                            preview={false} // Preview'u kapattık
                                         />
                                     }
-                                    title={product.name}
-                                    description={`Fiyat: ${product.price} TL`}
-                                />
+                                >
+                                    <Card.Meta
+                                        title={<span style={{ fontWeight: 600 }}>{product.name}</span>}
+                                        description={
+                                            <div style={{ marginTop: 5 }}>
+                                                <span style={{ color: '#444' }}>{product.description}</span>
+                                                <br />
+                                                <span style={{ fontWeight: 500, color: '#000' }}>
+                                                    {product.price} TL
+                                                </span>
+                                            </div>
+                                        }
+                                    />
+                                </Card>
                             </List.Item>
                         )}
                     />
@@ -253,7 +322,85 @@ const MenuPage: React.FC = () => {
                 margin: '0 auto',
             }}
         >
-            <h1 style={{ textAlign: 'center' }}>Menü</h1>
+            {/* Üst Bilgi */}
+            <Row justify="space-between" align="middle" style={{ marginBottom: '20px' }}>
+                <Col>
+                    <Space>
+                        <EnvironmentOutlined style={{ fontSize: '16px', color: '#fff' }} />
+                        <a
+                            href="https://www.google.com/maps?q=your+business+address"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                fontSize: '14px',
+                                color: '#fff',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            İstanbul/Sefaköy
+                        </a>
+                    </Space>
+                </Col>
+                <Col>
+                    <Space>
+                        <InstagramOutlined style={{ fontSize: '16px', color: '#fff' }} />
+                        <a
+                            href="https://www.instagram.com/your_instagram_page"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                fontSize: '14px',
+                                color: '#fff',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            Hookah Specials
+                        </a>
+                    </Space>
+                </Col>
+            </Row>
+
+
+            <h1 style={{ textAlign: 'center' }}>Hookah Specials Menü</h1>
+
+            {/* Menü Altında Wi-Fi Şifre Alanı */}
+            <Row justify="start" align="middle" style={{ marginTop: '20px', padding: '10px 10px 10px 0px' }}>
+                <Col>
+                    <Space>
+                        <span
+                            style={{
+                                fontSize: '14px',
+                                color: '#fff',
+                                backgroundColor: '#333',
+                                padding: '5px 10px',
+                                borderRadius: '5px',
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <WifiOutlined style={{ marginRight: '8px', fontSize: '18px', color: '#fff' }} />
+                            <strong>wifiparola</strong>
+                        </span>
+                        <Button
+                            icon={<CopyOutlined style={{ color: '#fff' }} />}
+                            style={{
+                                backgroundColor: '#333',
+                                border: 'none',
+                                color: '#fff',
+                                borderRadius: '5px',
+                                padding: '5px',
+                            }}
+                            onClick={() => {
+                                navigator.clipboard.writeText('wifiparola');
+                                message.success('Wi-Fi şifresi kopyalandı!');
+                            }}
+                        />
+                    </Space>
+                </Col>
+            </Row>
+
+
+
             {loading ? (
                 <div style={{ textAlign: 'center', marginTop: '20px' }}>
                     <Spin size="large" />
