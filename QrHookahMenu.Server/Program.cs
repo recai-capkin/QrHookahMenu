@@ -61,14 +61,16 @@ app.UseStaticFiles();  // Statik dosyalar (örneğin, resim yüklemeleri) için 
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+// CORS middleware'ini ekleyin
+app.UseCors("AllowAll");
+
+app.UseAuthentication(); // Authentication middleware'i ekle
+app.UseAuthorization();  // Authorization middleware'i ekle
 
 app.MapControllers();
 
 app.MapFallbackToFile("/index.html");
 
-// CORS middleware'ini ekleyin
-app.UseCors("AllowAll");
-app.UseAuthentication(); // Authentication middleware'i ekle
-app.UseAuthorization();  // Authorization middleware'i ekle
+
+
 app.Run();

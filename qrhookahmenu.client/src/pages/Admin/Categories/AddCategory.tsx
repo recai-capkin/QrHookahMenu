@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Upload, message, Select } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
+import config from '../../../config/config';
 
 const { Option } = Select;
 
@@ -18,7 +19,7 @@ const AddCategory: React.FC = () => {
     useEffect(() => {
         const fetchBaseCategories = async () => {
             try {
-                const response = await fetch('/api/categories/base');
+                const response = await fetch(`${config.apiBaseUrl}/Category/base-categories`);
                 const data = await response.json();
                 setBaseCategories(data);
             } catch (error) {
@@ -29,11 +30,6 @@ const AddCategory: React.FC = () => {
 
         fetchBaseCategories();
     }, []);
-
-    // Resim değişikliği
-    const handleFileChange = ({ file }: any) => {
-        setFile(file.originFileObj); // Dosyayı state'e kaydet
-    };
 
     // Form gönderimi
     const handleSubmit = async (values: any) => {
@@ -47,9 +43,13 @@ const AddCategory: React.FC = () => {
         }
 
         try {
-            const response = await fetch('/api/categories', {
+            const token = localStorage.getItem('authToken'); 
+            const response = await fetch(`${config.apiBaseUrl}/Category/CreateCategory`, {
                 method: 'POST',
                 body: formData,
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
             });
 
             if (response.ok) {
@@ -109,7 +109,17 @@ const AddCategory: React.FC = () => {
                 <Form.Item label="Kategori Resmi">
                     <Upload
                         beforeUpload={() => false} // Dosya yüklemeyi kontrol etmek için
-                        onChange={handleFileChange}
+                        onChange={(info) => {
+                            // Eğer dosya silindiyse:
+                            if (info.file.status === 'removed' || info.fileList.length === 0) {
+                                setFile(null);
+                                return;
+                            }
+
+                            // Dosya seçilmişse (ilk, tek dosya):
+                            const uploadedFile = info.fileList[0].originFileObj;
+                            setFile(uploadedFile);
+                        }}
                         maxCount={1}
                         accept="image/*"
                     >

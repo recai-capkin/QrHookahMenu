@@ -45,14 +45,14 @@ const Dashboard: React.FC = () => {
                     style={{ height: '100%' }}
                 >
                     <Menu.Item key="1" icon={<AppstoreOutlined />}>
-                        Dashboard
+                        Kategori ve Ürün Yönetimi
                     </Menu.Item>
-                    <Menu.Item key="2" icon={<FolderOpenOutlined />}>
-                        Kategoriler
-                    </Menu.Item>
-                    <Menu.Item key="3" icon={<FolderOpenOutlined />}>
-                        Ürünler
-                    </Menu.Item>
+                    {/*<Menu.Item key="2" icon={<FolderOpenOutlined />}>*/}
+                    {/*    Kategoriler*/}
+                    {/*</Menu.Item>*/}
+                    {/*<Menu.Item key="3" icon={<FolderOpenOutlined />}>*/}
+                    {/*    Ürünler*/}
+                    {/*</Menu.Item>*/}
                     {/* Gerekirse ek menü item'ları */}
                 </Menu>
             </Sider>

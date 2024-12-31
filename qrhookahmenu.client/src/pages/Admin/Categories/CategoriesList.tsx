@@ -1,35 +1,39 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Popconfirm, Upload, message, Image } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
-import type { UploadProps, ColumnsType } from 'antd/es/table';
+import { Table, Button, Space, Popconfirm, message, Image, Drawer } from 'antd';
+import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
+import config from '../../../config/config';
+import AddCategory from './AddCategory'; // AddCategory bileşenini import edin
+import EditCategory from './EditCategory'; // EditCategory bileşenini import edin
 
 interface CategoryDto {
     id?: number;
     parentId?: number | null;
+    parentName?: string | null; // Üst kategori adı
     name: string;
     description?: string;
     sortOrder?: number;
     imageUrl?: string; // URL alanı
-    subCategories?: CategoryDto[];
-    products?: ProductDto[];
-}
-
-interface ProductDto {
-    id: number;
-    name: string;
-    price: number;
-    imageUrl?: string;
 }
 
 const CategoriesList: React.FC = () => {
     const [categories, setCategories] = useState<CategoryDto[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [drawerVisible, setDrawerVisible] = useState<boolean>(false);
+    const [editingCategory, setEditingCategory] = useState<CategoryDto | null>(null);
+    const [isEditMode, setIsEditMode] = useState<boolean>(false);
 
     // API'den kategorileri çekme
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await fetch('/api/categories');
+                const token = localStorage.getItem('authToken'); 
+                const response = await fetch(`${config.apiBaseUrl}/category/get-all-categories`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
                 const data: CategoryDto[] = await response.json();
                 setCategories(data);
             } catch (error) {
@@ -43,48 +47,23 @@ const CategoriesList: React.FC = () => {
         fetchCategories();
     }, []);
 
+    // Drawer işlemleri
+    const showDrawer = (category?: CategoryDto) => {
+        setEditingCategory(category || null);
+        setIsEditMode(!!category);
+        setDrawerVisible(true);
+    };
+
+    const closeDrawer = () => {
+        setDrawerVisible(false);
+        setEditingCategory(null);
+        setIsEditMode(false);
+    };
+
     // Silme işlemi
     const handleDelete = (id: number) => {
         setCategories((prev) => prev.filter((category) => category.id !== id));
         message.success('Kategori başarıyla silindi.');
-    };
-
-    // Düzenleme işlemi
-    const handleEdit = (id: number) => {
-        console.log('Edit:', id);
-        window.location.href = `/admin/categories/edit/${id}`;
-    };
-
-    // Kategori ekleme işlemi
-    const handleAdd = () => {
-        console.log('Add new category');
-        window.location.href = '/admin/categories/add';
-    };
-
-    // Resim yükleme işlemi
-    const handleUpload = async (info: any, record: CategoryDto) => {
-        if (info.file.status === 'uploading') {
-            message.loading('Resim yükleniyor...');
-            return;
-        }
-
-        if (info.file.status === 'done') {
-            // Backend'den dönen URL'yi al
-            const uploadedUrl = info.file.response?.url; // Backend yükleme yanıtı
-            if (uploadedUrl) {
-                // Kategoriye yeni URL'yi ekle
-                setCategories((prev) =>
-                    prev.map((category) =>
-                        category.id === record.id
-                            ? { ...category, imageUrl: uploadedUrl }
-                            : category
-                    )
-                );
-                message.success('Resim başarıyla yüklendi.');
-            } else {
-                message.error('Resim yüklenirken bir hata oluştu.');
-            }
-        }
     };
 
     // Tablo kolonları
@@ -93,23 +72,8 @@ const CategoriesList: React.FC = () => {
             title: 'Resim',
             dataIndex: 'imageUrl',
             key: 'imageUrl',
-            render: (imageUrl: string | undefined, record) => (
-                <Space>
-                    {imageUrl ? (
-                        <Image width={50} src={imageUrl} />
-                    ) : (
-                        <span>Resim Yok</span>
-                    )}
-                    <Upload
-                        name="image"
-                        action="/api/upload" // Backend yükleme endpoint
-                        onChange={(info) => handleUpload(info, record)}
-                        showUploadList={false}
-                    >
-                        <Button icon={<UploadOutlined />}>Yükle</Button>
-                    </Upload>
-                </Space>
-            ),
+            render: (imageUrl: string | undefined) =>
+                imageUrl ? <Image width={50} src={`${config.imageBaseUrl}/${imageUrl}`} /> : <span>Resim Yok</span>,
         },
         {
             title: 'Adı',
@@ -127,14 +91,16 @@ const CategoriesList: React.FC = () => {
             key: 'sortOrder',
         },
         {
+            title: 'Üst Kategori',
+            dataIndex: 'parentName',
+            key: 'parentName',
+        },
+        {
             title: 'İşlemler',
             key: 'actions',
             render: (_, record) => (
                 <Space size="middle">
-                    <Button
-                        icon={<EditOutlined />}
-                        onClick={() => handleEdit(record.id!)}
-                    >
+                    <Button icon={<EditOutlined />} onClick={() => showDrawer(record)}>
                         Düzenle
                     </Button>
                     <Popconfirm
@@ -159,7 +125,7 @@ const CategoriesList: React.FC = () => {
                 type="primary"
                 icon={<PlusOutlined />}
                 style={{ marginBottom: '20px' }}
-                onClick={handleAdd}
+                onClick={() => showDrawer()}
             >
                 Kategori Ekle
             </Button>
@@ -170,6 +136,43 @@ const CategoriesList: React.FC = () => {
                 loading={loading}
                 pagination={{ pageSize: 10 }}
             />
+            <Drawer
+                title={isEditMode ? 'Kategori Güncelle' : 'Yeni Kategori Ekle'}
+                width={500}
+                onClose={closeDrawer}
+                visible={drawerVisible}
+                bodyStyle={{ padding: 20 }}
+            >
+                {isEditMode ? (
+                    <EditCategory
+                        categoryId={editingCategory?.id!}
+                        category={editingCategory} // Güncelleme modu için kategoriyi iletin
+                        onClose={closeDrawer} // Drawer'ı kapatma fonksiyonu
+                        refreshCategories={() => {
+                            // Kategorileri tekrar yüklemek için
+                            setLoading(true);
+                            fetch(`${config.apiBaseUrl}/category`)
+                                .then((res) => res.json())
+                                .then((data) => setCategories(data))
+                                .catch((error) => console.error('Hata:', error))
+                                .finally(() => setLoading(false));
+                        }}
+                    />
+                ) : (
+                    <AddCategory
+                        onClose={closeDrawer} // Drawer'ı kapatma fonksiyonu
+                        refreshCategories={() => {
+                            // Kategorileri tekrar yüklemek için
+                            setLoading(true);
+                            fetch(`${config.apiBaseUrl}/category`)
+                                .then((res) => res.json())
+                                .then((data) => setCategories(data))
+                                .catch((error) => console.error('Hata:', error))
+                                .finally(() => setLoading(false));
+                        }}
+                    />
+                )}
+            </Drawer>
         </div>
     );
 };

@@ -1,14 +1,18 @@
 ﻿import React, { useState } from 'react';
 import { Input, Button, Form, Typography, message } from 'antd';
-import { useNavigate } from 'react-router-dom'; // React Router'dan useNavigate'i import edin
+import { useNavigate } from 'react-router-dom';
 import config from '../config/config';
+import { useAuth } from '../contexts/AuthContext'; // <-- import AuthContext hook
 
 const { Title } = Typography;
 
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const navigate = useNavigate(); // useNavigate hook'u ile yönlendirme
+    const navigate = useNavigate();
+
+    // AuthContext'i kullan (login, isAuthenticated vs. elinde)
+    const { login } = useAuth();
 
     const handleLogin = async () => {
         try {
@@ -20,9 +24,12 @@ const Login = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem('authToken', data.token); // Token'ı localStorage'a kaydet
+                // Eskiden: localStorage.setItem('authToken', data.token);
+                // Şimdi: Context içindeki login fonksiyonunu çağırıyoruz:
+                login(data.token);
+
                 message.success('Başarıyla giriş yaptınız!');
-                navigate('/admin/dashboard'); // Dashboard sayfasına yönlendir
+                navigate('/admin/dashboard');
             } else {
                 message.error('Giriş başarısız! Kullanıcı adı veya şifre hatalı!');
             }

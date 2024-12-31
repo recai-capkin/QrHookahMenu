@@ -20,7 +20,21 @@ namespace QrHookahMenu.Server.Controllers
             _context = context;
             _environment = environment;
         }
-
+        [Authorize]
+        [HttpGet("get-category-by-id/{categoryId}")]
+        public async Task<IActionResult> GetCategoryById(int categoryId)
+        {
+            var categories = await _context.Categories.Where(x => x.Id == categoryId).FirstOrDefaultAsync();
+            var newCategories = MapToCategoryDto(categories);
+            return Ok(newCategories);
+        }
+        [Authorize]
+        [HttpGet("get-all-categories")]
+        public async Task<IActionResult> GetCategories()
+        {
+            var categories = await GetAllCategoriesWithParentAsync(); // Service katmanını çağırıyoruz
+            return Ok(categories);
+        }
         // Tüm kategorileri listeleme
         [HttpGet("all-categories")]
         public async Task<IActionResult> GetAllCategories()
@@ -69,7 +83,7 @@ namespace QrHookahMenu.Server.Controllers
         }
         // Yeni kategori oluşturma (resim dosyası destekli)
         [Authorize]
-        [HttpPost]
+        [HttpPost("CreateCategory")]
         public async Task<IActionResult> CreateCategory([FromForm] CategoryDto category, IFormFile? file)
         {
             if (file != null && file.Length > 0)
@@ -116,29 +130,31 @@ namespace QrHookahMenu.Server.Controllers
         }
 
         // Kategori güncelleme (resim dosyası destekli)
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, [FromForm] Category updatedCategory, IFormFile? file)
+        [Authorize]
+        [HttpPut("UpdateCategory/{id}")]
+        public async Task<IActionResult> UpdateCategory(int id, [FromForm] CategoryDto category, IFormFile? file)
         {
-            var category = await _context.Categories.FindAsync(id);
-            if (category == null)
+            // Kategoriyi veritabanından al
+            var existingCategory = await _context.Categories.FindAsync(id);
+            if (existingCategory == null)
             {
-                return NotFound();
+                return NotFound("Kategori bulunamadı.");
             }
 
-            // Eğer yeni bir resim yüklendiyse eski resmi sil ve yeni resmi kaydet
+            // Eğer yeni bir resim yüklenmişse, eski resmi sil ve yenisini kaydet
             if (file != null && file.Length > 0)
             {
-                // Eski resmi sil
-                if (!string.IsNullOrEmpty(category.ImageUrl))
+                // Mevcut resmi sil
+                if (!string.IsNullOrEmpty(existingCategory.ImageUrl))
                 {
-                    var oldImagePath = Path.Combine(_environment.WebRootPath, category.ImageUrl.TrimStart('/'));
+                    var oldImagePath = Path.Combine(_environment.WebRootPath, existingCategory.ImageUrl.TrimStart('/'));
                     if (System.IO.File.Exists(oldImagePath))
                     {
                         System.IO.File.Delete(oldImagePath);
                     }
                 }
 
-                // Yeni resmi kaydet
+                // Yeni dosya adı oluştur ve kaydet
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
                 var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", fileName);
 
@@ -147,19 +163,33 @@ namespace QrHookahMenu.Server.Controllers
                     await file.CopyToAsync(stream);
                 }
 
-                updatedCategory.ImageUrl = $"/uploads/{fileName}";
+                // Yeni resim URL'sini ata
+                existingCategory.ImageUrl = $"/uploads/{fileName}";
             }
 
             // Kategori bilgilerini güncelle
-            category.Name = updatedCategory.Name;
-            category.Description = updatedCategory.Description;
-            category.ImageUrl = updatedCategory.ImageUrl;
-            category.SortOrder = updatedCategory.SortOrder;
-            category.ParentId = updatedCategory.ParentId;
+            existingCategory.Name = existingCategory.Name;
+            existingCategory.Description = existingCategory.Description;
+            existingCategory.SortOrder = existingCategory.SortOrder;
+            existingCategory.ParentId = existingCategory.ParentId;
 
-            await _context.SaveChangesAsync();
-            return NoContent();
+            // Alt kategorilerin ParentId'sini güncelle
+            if (category.SubCategories != null && category.SubCategories.Any())
+            {
+                foreach (var subCategoryDto in category.SubCategories)
+                {
+                    var subCategory = await _context.Categories.FindAsync(subCategoryDto.Id);
+                    if (subCategory != null)
+                    {
+                        subCategory.ParentId = existingCategory.Id;
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync(); // Güncellemeleri kaydet
+            return NoContent(); // Güncelleme başarılı
         }
+
 
         // Kategori silme
         [HttpDelete("{id}")]
@@ -189,7 +219,7 @@ namespace QrHookahMenu.Server.Controllers
         public async Task<IActionResult> GetBaseCategory()
         {
             var baseCategories = await _context.Categories
-         .Where(x => x.ParentId == null) // Ana kategoriler
+         .Where(x => x.ParentId == null || !x.Products.Any()) // Ana kategoriler
          .Select(x => new
          {
              x.Id,
@@ -224,6 +254,23 @@ namespace QrHookahMenu.Server.Controllers
                     })
                     .ToList()
             };
+        }
+        private async Task<List<AllCategoryDto>> GetAllCategoriesWithParentAsync()
+        {
+            var categories = await _context.Categories
+                .Select(category => new AllCategoryDto
+                {
+                    Id = category.Id,
+                    Name = category.Name,
+                    Description = category.Description,
+                    ImageUrl = category.ImageUrl,
+                    SortOrder = category.SortOrder,
+                    ParentId = category.ParentId,
+                    ParentName = category.Parent != null ? category.Parent.Name : null // Üst kategorinin adını getir
+                })
+                .ToListAsync();
+
+            return categories;
         }
 
     }
